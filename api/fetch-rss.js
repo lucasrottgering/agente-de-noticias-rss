@@ -1,9 +1,16 @@
 // api/fetch-rss.js
 
 // Importa as bibliotecas necessárias.
-// 'rss-parser' é especialista em ler feeds RSS.
 const Parser = require('rss-parser');
-const parser = new Parser();
+
+// Instancia o parser com opções customizadas.
+const parser = new Parser({
+  // Adiciona um cabeçalho de User-Agent para simular um navegador.
+  // Isso é crucial para evitar ser bloqueado por sites com segurança anti-robô.
+  headers: {
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36'
+  },
+});
 
 // Esta é a função principal que a Vercel irá executar.
 module.exports = async (req, res) => {
@@ -17,7 +24,6 @@ module.exports = async (req, res) => {
 
   try {
     // O backend (aqui na Vercel) busca e analisa o feed RSS.
-    // Isso contorna o problema de CORS, pois é um servidor fazendo a requisição.
     const feed = await parser.parseURL(feedUrl);
 
     // Permite que qualquer domínio (incluindo nosso app frontend) acesse esta API.
@@ -29,6 +35,6 @@ module.exports = async (req, res) => {
 
   } catch (error) {
     console.error('Erro ao buscar feed:', error);
-    res.status(500).json({ error: 'Falha ao buscar ou analisar o feed RSS.', details: error.message });
+    res.status(500).json({ error: 'Falha ao buscar ou analisar o feed RSS. Verifique se a URL está correta e é um feed RSS válido.', details: error.message });
   }
 };
