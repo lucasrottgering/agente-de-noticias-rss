@@ -5,10 +5,10 @@ const Parser = require('rss-parser');
 
 // Instancia o parser com opções customizadas.
 const parser = new Parser({
-  // Adiciona um cabeçalho de User-Agent para simular um navegador.
+  // Adiciona um cabeçalho de User-Agent para simular um navegador mais moderno.
   // Isso é crucial para evitar ser bloqueado por sites com segurança anti-robô.
   headers: {
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36'
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36'
   },
 });
 
