@@ -1,12 +1,13 @@
 // frontend/src/App.js
 import React, { useState, useEffect } from 'react';
-import { Rss, Newspaper, LoaderCircle, AlertTriangle, Plus, Trash2, Search } from 'lucide-react';
+import { Rss, Newspaper, LoaderCircle, AlertTriangle, Plus, Trash2, Search, Sparkles } from 'lucide-react';
 
 function App() {
   const [feeds, setFeeds] = useState(() => JSON.parse(localStorage.getItem('rssFeeds')) || []);
-  const [newFeedUrl, setNewFeedUrl] = useState('');
+  const [urlInput, setUrlInput] = useState('');
   const [news, setNews] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isDiscovering, setIsDiscovering] = useState(false);
   const [error, setError] = useState(null);
   const [filters, setFilters] = useState({ keyword: '', year: '' });
 
@@ -14,11 +15,31 @@ function App() {
     localStorage.setItem('rssFeeds', JSON.stringify(feeds));
   }, [feeds]);
 
+  const discoverFeed = async () => {
+      if (!urlInput) {
+          setError('Insira a URL de um site para descobrir o feed.');
+          return;
+      }
+      setIsDiscovering(true);
+      setError(null);
+      try {
+          const backendUrl = `/api/find-rss?url=${encodeURIComponent(urlInput)}`;
+          const response = await fetch(backendUrl);
+          const data = await response.json();
+          if (!response.ok) throw new Error(data.error || 'Erro desconhecido');
+          setUrlInput(data.feedUrl); // Preenche o campo com a URL encontrada
+      } catch (err) {
+          setError(err.message);
+      } finally {
+          setIsDiscovering(false);
+      }
+  };
+
   const addFeed = (e) => {
     e.preventDefault();
-    if (newFeedUrl && !feeds.includes(newFeedUrl)) {
-      setFeeds([...feeds, newFeedUrl]);
-      setNewFeedUrl('');
+    if (urlInput && !feeds.includes(urlInput)) {
+      setFeeds([...feeds, urlInput]);
+      setUrlInput('');
     }
   };
 
@@ -35,7 +56,6 @@ function App() {
     setError(null);
     setNews([]);
 
-    // Constrói a URL do backend com os parâmetros de feeds e filtros
     const params = new URLSearchParams();
     feeds.forEach(feed => params.append('feed', feed));
     if (filters.keyword) params.append('keyword', filters.keyword);
@@ -47,7 +67,7 @@ function App() {
       const response = await fetch(backendUrl);
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.details || 'Falha ao buscar notícias.');
+        throw new Error(errorData.error || 'Falha ao buscar notícias.');
       }
       const items = await response.json();
       
@@ -60,6 +80,9 @@ function App() {
       }));
 
       setNews(formattedNews);
+      if(formattedNews.length === 0) {
+        setError("Nenhuma notícia encontrada com os filtros aplicados.")
+      }
     } catch (err) {
       console.error(err);
       setError(err.message);
@@ -76,11 +99,19 @@ function App() {
           <aside className="lg:col-span-4 xl:col-span-3">
             <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 sticky top-8">
               <h2 className="text-xl font-bold mb-4">Gerenciar Feeds</h2>
+              <div className="mb-4">
+                  <label className="text-sm font-medium text-gray-600">URL do Site ou Feed</label>
+                  <div className="flex gap-2 mt-1">
+                    <input type="url" value={urlInput} onChange={(e) => setUrlInput(e.target.value)} placeholder="URL do site ou feed" className="w-full border-gray-300 rounded-lg px-3 py-2 text-sm" />
+                    <button onClick={discoverFeed} disabled={isDiscovering} className="bg-purple-600 text-white p-2 rounded-lg hover:bg-purple-700 disabled:bg-purple-300">
+                        {isDiscovering ? <LoaderCircle size={20} className="animate-spin"/> : <Sparkles size={20}/>}
+                    </button>
+                  </div>
+              </div>
               <form onSubmit={addFeed} className="flex gap-2 mb-4">
-                <input type="url" value={newFeedUrl} onChange={(e) => setNewFeedUrl(e.target.value)} placeholder="URL do Feed RSS/ATOM" className="w-full border-gray-300 rounded-lg px-3 py-2 text-sm" required />
-                <button type="submit" className="bg-blue-600 text-white p-2 rounded-lg hover:bg-blue-700"><Plus size={20}/></button>
+                <button type="submit" className="w-full bg-blue-600 text-white p-2 rounded-lg hover:bg-blue-700 flex items-center justify-center"><Plus size={20} className="mr-2"/> Adicionar Feed à Lista</button>
               </form>
-              <div className="space-y-2 max-h-48 overflow-y-auto mb-6">
+              <div className="space-y-2 max-h-48 overflow-y-auto mb-6 border-t pt-4">
                 {feeds.map(feed => (
                   <div key={feed} className="flex justify-between items-center bg-gray-50 p-2 rounded">
                     <span className="text-xs truncate text-gray-600" title={feed}>{feed}</span>
@@ -107,8 +138,6 @@ function App() {
   );
 }
 
-// Reutilize os componentes Header, NewsFeed e NewsItem do código anterior
-// ... (Cole os componentes Header, NewsFeed, NewsItem aqui)
 const Header = () => (
   <header className="text-center mb-10">
     <h1 className="text-3xl md:text-4xl font-bold text-gray-900">Agente Agregador de Notícias</h1>
@@ -130,4 +159,5 @@ const NewsItem = ({ item }) => (
 );
 
 export default App;
+
 
