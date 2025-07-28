@@ -10,17 +10,13 @@ module.exports = async (req, res) => {
   }
 
   try {
-    // O backend busca o HTML da página principal do site.
     const { data: html } = await axios.get(siteUrl, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36'
       }
     });
 
-    // Carrega o HTML na biblioteca Cheerio para facilitar a busca.
     const $ = cheerio.load(html);
-
-    // Procura por links que se declarem como feeds RSS ou ATOM.
     const feedUrl = $('link[type="application/rss+xml"]').attr('href') || 
                     $('link[type="application/atom+xml"]').attr('href');
 
@@ -28,7 +24,6 @@ module.exports = async (req, res) => {
       return res.status(404).json({ error: 'Nenhum feed RSS ou ATOM encontrado nesta URL.' });
     }
     
-    // Se o link for relativo (ex: /feed), transforma em absoluto.
     const absoluteFeedUrl = new URL(feedUrl, siteUrl).href;
 
     res.setHeader('Access-Control-Allow-Origin', '*');
