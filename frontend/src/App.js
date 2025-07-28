@@ -71,16 +71,28 @@ function App() {
       }
       const items = await response.json();
       
-      const formattedNews = items.map(item => ({
-        title: item.title,
-        summary: item.contentSnippet || item.content?.replace(/<[^>]*>?/gm, '') || 'Resumo não disponível.',
-        link: item.link,
-        source: new URL(item.link).hostname.replace('www.', ''),
-        tags: Array.isArray(item.categories) ? item.categories : []
-      }));
+      // Mapeamento de notícias mais seguro para evitar que a página quebre
+      const formattedNews = items.map(item => {
+        try {
+          // A URL é a parte mais crítica. Se for inválida ou ausente, pulamos este item.
+          if (!item.link || !item.link.startsWith('http')) {
+            return null;
+          }
+          return {
+            title: item.title || 'Título indisponível',
+            summary: item.contentSnippet || item.content?.replace(/<[^>]*>?/gm, '') || 'Resumo não disponível.',
+            link: item.link,
+            source: new URL(item.link).hostname.replace('www.', ''),
+            tags: Array.isArray(item.categories) ? item.categories : []
+          };
+        } catch (e) {
+          console.warn("Item de notícia malformado foi ignorado:", item, e);
+          return null; // Ignora o item com erro em vez de quebrar a aplicação.
+        }
+      }).filter(Boolean); // Remove todos os itens nulos (os que falharam).
 
       setNews(formattedNews);
-      if(formattedNews.length === 0) {
+      if(formattedNews.length === 0 && !error) {
         setError("Nenhuma notícia encontrada com os filtros aplicados.")
       }
     } catch (err) {

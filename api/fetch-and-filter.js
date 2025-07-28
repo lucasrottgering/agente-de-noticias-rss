@@ -32,7 +32,17 @@ module.exports = async (req, res) => {
       allItems = allItems.filter(item => item.pubDate && new Date(item.pubDate).getFullYear() === parseInt(year));
     }
 
-    allItems.sort((a, b) => new Date(b.pubDate) - new Date(a.pubDate));
+    // Ordenação mais segura, que não quebra com datas inválidas.
+    allItems.sort((a, b) => {
+        try {
+            const dateA = a.pubDate ? new Date(a.pubDate) : 0;
+            const dateB = b.pubDate ? new Date(b.pubDate) : 0;
+            if (isNaN(dateA.getTime()) || isNaN(dateB.getTime())) return 0;
+            return dateB - dateA;
+        } catch (e) {
+            return 0;
+        }
+    });
     
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.status(200).json(allItems.slice(0, 50));
